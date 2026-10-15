@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner';
 import { api, errorMessage } from '../lib/api';
 import { ACTION_LABEL, dateTime, money, STATUS, timeAgo } from '../lib/format';
-import { attrKey, attributeGroups, findVariant } from '../lib/variants';
+import { attrKey, attributeGroups, findVariant, optionAvailable } from '../lib/variants';
 import { Badge, Button, Card, Field, Input, Select, Spinner, Textarea } from '../components/ui.jsx';
 import { useWilayas } from '../components/CompanyForm.jsx';
 
@@ -326,14 +326,18 @@ export default function OrderPage() {
                           <div className="flex flex-wrap justify-end gap-2">
                             {g.options.map((o) => {
                               const isSel = selected === o.value;
+                              // غير متوفر = لا يمكن اختياره (الخيار المختار حالياً في الطلب يبقى ظاهراً كما هو)
+                              const available = isSel || optionAvailable(variants, currentAttrs, g.key, o.value);
                               const pick = () => {
+                                if (!available) return;
                                 const match = findVariant(variants, currentAttrs, g.key, o.value);
                                 if (match) setItem(idx, { variantDetailId: match.id });
                               };
                               if (g.displayMode === 'color' || g.displayMode === 'image') {
                                 return (
-                                  <button key={o.value} disabled={!editable} onClick={pick}
-                                    className={`w-8 h-8 rounded-full overflow-hidden ring-2 ring-offset-2 ${isSel ? 'ring-indigo-500' : 'ring-slate-200'}`}>
+                                  <button key={o.value} disabled={!editable || !available} onClick={pick} title={available ? undefined : 'غير متوفر'}
+                                    className={`relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-offset-2 ${isSel ? 'ring-indigo-500' : 'ring-slate-200'} ${available ? '' : 'opacity-35 cursor-not-allowed'}`}>
+                                    {!available && <span className="absolute inset-0 z-10 m-auto h-0.5 w-[140%] -ms-[20%] bg-rose-500 rotate-45" />}
                                     {g.displayMode === 'color'
                                       ? <span className="block w-full h-full" style={{ background: o.value }} />
                                       : <img src={o.value} alt="" className="w-full h-full object-cover" />}
@@ -341,8 +345,8 @@ export default function OrderPage() {
                                 );
                               }
                               return (
-                                <button key={o.value} disabled={!editable} onClick={pick}
-                                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold ${isSel ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200'}`}>
+                                <button key={o.value} disabled={!editable || !available} onClick={pick} title={available ? undefined : 'غير متوفر'}
+                                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold ${isSel ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200'} ${available ? '' : 'opacity-40 line-through cursor-not-allowed bg-slate-50'}`}>
                                   {o.value}
                                 </button>
                               );

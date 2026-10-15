@@ -29,6 +29,8 @@ export default function QueuePage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') || 'new';
+  // فلتر التاجر (في الرابط حتى يبقى بعد فتح طلب والرجوع)
+  const merchant = params.get('merchant') || '';
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -40,14 +42,14 @@ export default function QueuePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: res } = await api.get('/confirmation/orders', { params: { tab, search: query || undefined, page } });
+      const { data: res } = await api.get('/confirmation/orders', { params: { tab, search: query || undefined, page, merchantId: merchant || undefined } });
       setData(res);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [tab, query, page]);
+  }, [tab, query, page, merchant]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -59,7 +61,8 @@ export default function QueuePage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const setTab = (key) => { setParams({ tab: key }); setPage(1); };
+  const setTab = (key) => { setParams(merchant ? { tab: key, merchant } : { tab: key }); setPage(1); };
+  const setMerchant = (id) => { setParams(id ? { tab, merchant: id } : { tab }); setPage(1); };
 
   /** فتح الطلب فقط — البدء في تأكيده يكون بزر "أنا أؤكد الطلبية" داخله */
   const open = (o) => navigate(`/orders/${o.id}`);
@@ -67,7 +70,7 @@ export default function QueuePage() {
   const next = async () => {
     setNexting(true);
     try {
-      const { data: order } = await api.post('/confirmation/queue/next');
+      const { data: order } = await api.post('/confirmation/queue/next', null, { params: { merchantId: merchant || undefined } });
       if (order?.id) navigate(`/orders/${order.id}`);
       else toast.info('لا توجد طلبات جاهزة الآن');
     } catch (err) {
@@ -91,6 +94,18 @@ export default function QueuePage() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث بالاسم أو الهاتف..."
             className="w-full ps-10 pe-3 py-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-indigo-500" />
         </div>
+        {(data?.merchants?.length ?? 0) > 0 && (
+          <div className="relative sm:w-56">
+            <Store size={16} className="absolute top-1/2 -translate-y-1/2 start-3 text-slate-400 pointer-events-none" />
+            <select value={merchant} onChange={(e) => setMerchant(e.target.value)}
+              className={`w-full ps-10 pe-3 py-3 rounded-xl border bg-white text-sm outline-none focus:border-indigo-500 ${merchant ? 'border-indigo-400 text-indigo-700 font-semibold' : 'border-slate-200'}`}>
+              <option value="">كل التجار</option>
+              {data.merchants.map((m) => (
+                <option key={m.id} value={m.id}>{m.username}{m.pending ? ` (${m.pending} قيد الانتظار)` : ''}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <button onClick={load} className="hidden sm:flex items-center justify-center w-12 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600">
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
         </button>
