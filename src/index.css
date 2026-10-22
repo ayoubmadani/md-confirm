@@ -9,3 +9,14 @@ body { @apply bg-slate-50 text-slate-900 antialiased; }
 
 /* أرقام الهواتف والمبالغ تبقى من اليسار لليمين داخل واجهة عربية */
 .ltr { direction: ltr; unicode-bidi: isolate; }
+
+/* بلا أسهم زيادة/نقصان في كل خانات الأرقام على المنصة */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
