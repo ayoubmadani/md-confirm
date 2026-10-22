@@ -6,6 +6,12 @@ import App from './App.jsx'
 import { AuthProvider } from './lib/auth.jsx'
 import './index.css'
 
+// خانات الأرقام: عجلة الفأرة لا تغيّر القيمة — نُخرج التركيز فتتحرك الصفحة بدلها
+document.addEventListener('wheel', () => {
+  const el = document.activeElement;
+  if (el instanceof HTMLInputElement && el.type === 'number') el.blur();
+}, { passive: true });
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
